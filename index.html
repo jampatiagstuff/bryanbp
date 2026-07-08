@@ -188,7 +188,7 @@
   .note {
     display: inline-block;
     color: var(--optic-yellow);
-    font-size: 12px;
+    font-size: 13.5px;
     font-weight: 600;
     margin-top: 6px;
     letter-spacing: 0.02em;
@@ -280,9 +280,9 @@
   }
   .vote-btn:hover { background: rgba(53,196,176,0.12); }
   .vote-btn.on {
-    background: var(--optic-yellow);
-    border-color: var(--optic-yellow);
-    color: var(--court-navy);
+    background: #BFEAD0;
+    border-color: #BFEAD0;
+    color: #1F4B33;
   }
   .vote-btn.on:hover { filter: brightness(0.95); }
   .vote-btn:disabled { opacity: 0.5; cursor: wait; }
@@ -535,7 +535,7 @@ function render() {
 
   // Header
   wrap.appendChild(el('header', {}, [
-    el('div', { class: 'eyebrow' }, 'THE PICKLEBALL INVITATIONAL'),
+    el('div', { class: 'eyebrow' }, 'THE BP-BP INVITATIONAL'),
     el('h1', {}, ["BRYAN'S BACHELOR", el('br'), 'WEEKEND']),
     el('p', { class: 'sub' }, 'Two days on the court, one groom to celebrate. Vote yourself into every match you\'re playing.'),
   ]));
