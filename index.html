@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en" style="background-color:#10192E;">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bryan's Bachelor Weekend — Pickleball Invitational</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --court-navy: #10192E;
+    --court-navy-2: #1B2740;
+    --card: #1F2D4A;
+    --card-line: #33456B;
+    --line-white: #F4F3EC;
+    --optic-yellow: #E4FF3D;
+    --court-teal: #35C4B0;
+    --muted: #93A2C2;
+    --coral: #FF6B5B;
+  }
+
+  * { box-sizing: border-box; }
+
+  html {
+    background: var(--court-navy) !important;
+    min-height: 100%;
+  }
+
+  body {
+    margin: 0 !important;
+    background-color: var(--court-navy) !important;
+    background-image:
+      radial-gradient(circle at 15% 0%, rgba(53,196,176,0.16), transparent 45%),
+      radial-gradient(circle at 90% 10%, rgba(228,255,61,0.10), transparent 40%) !important;
+    color: var(--line-white);
+    font-family: 'Work Sans', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  #root { background: var(--court-navy); min-height: 100vh; }
+
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 20px 48px;
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    text-align: center;
+    padding: 12px 0 28px;
+    border-bottom: 2px dashed var(--card-line);
+    margin-bottom: 32px;
+    position: relative;
+  }
+
+  .eyebrow {
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    font-size: 11px;
+    color: var(--optic-yellow);
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: clamp(30px, 7vw, 46px);
+    line-height: 1.05;
+    margin: 0 0 10px;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+  }
+
+  header p.sub {
+    color: var(--muted);
+    font-size: 14.5px;
+    margin: 0 auto;
+    max-width: 420px;
+    line-height: 1.5;
+  }
+
+  .ball {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--optic-yellow);
+    margin: 0 6px 2px;
+    vertical-align: middle;
+  }
+
+  /* ---------- Who am I bar ---------- */
+  .whoami {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 30px;
+  }
+  .whoami b { color: var(--line-white); font-weight: 600; }
+  .whoami button {
+    background: none; border: none; color: var(--court-teal);
+    font-size: 13px; text-decoration: underline; cursor: pointer; padding: 0;
+    font-family: inherit;
+  }
+
+  /* ---------- Day section ---------- */
+  .game-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 44px 0 18px;
+  }
+  .game-label:first-of-type { margin-top: 0; }
+  .game-label .tag {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    background: var(--optic-yellow);
+    color: var(--court-navy);
+    padding: 6px 12px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .game-label .day-name {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 20px;
+    text-transform: uppercase;
+  }
+  .game-label .rule {
+    flex: 1;
+    height: 1px;
+    background: repeating-linear-gradient(to right, var(--card-line) 0 6px, transparent 6px 12px);
+  }
+
+  /* ---------- Activity card ---------- */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-line);
+    border-radius: 14px;
+    padding: 20px 20px 18px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 5px;
+    background: var(--court-teal);
+  }
+  .card.voted::before { background: var(--optic-yellow); }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .meta-row {
+    font-family: 'Space Mono', monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--court-teal);
+    margin-bottom: 6px;
+  }
+
+  .card h3 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 19px;
+    margin: 0 0 4px;
+    text-transform: uppercase;
+    line-height: 1.15;
+  }
+
+  .venue {
+    color: var(--muted);
+    font-size: 13.5px;
+    margin: 0;
+  }
+
+  .note {
+    display: inline-block;
+    color: var(--optic-yellow);
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 6px;
+    letter-spacing: 0.02em;
+  }
+  .note::before { content: '✓ '; }
+
+  .cost-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--line-white);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--card-line);
+    padding: 4px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .card-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .in-count {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .in-count b { color: var(--optic-yellow); font-size: 16px; margin-right: 3px; }
+
+  .names {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+  .names b { color: var(--line-white); font-weight: 500; }
+
+  .admin-names { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+  .admin-footer {
+    max-width: 720px;
+    margin: 8px auto 0;
+    padding: 20px 20px 40px;
+    text-align: center;
+  }
+  .admin-footer button {
+    background: none; border: none; color: var(--muted);
+    font-size: 12px; text-decoration: underline; cursor: pointer;
+    font-family: inherit; letter-spacing: 0.02em;
+  }
+  .name-pill {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--card-line);
+    border-radius: 20px;
+    overflow: hidden;
+  }
+  .name-pill-btn {
+    background: none; border: none; color: var(--line-white);
+    font-family: inherit; font-size: 12.5px; padding: 5px 4px 5px 12px;
+    cursor: pointer;
+  }
+  .name-pill-x {
+    background: none; border: none; color: var(--coral);
+    font-size: 15px; line-height: 1; padding: 5px 10px 5px 6px;
+    cursor: pointer; font-weight: 700;
+  }
+  .name-pill-x:hover { color: #fff; }
+
+  .vote-btn {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding: 10px 18px;
+    border-radius: 30px;
+    border: 2px solid var(--court-teal);
+    background: transparent;
+    color: var(--court-teal);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .vote-btn:hover { background: rgba(53,196,176,0.12); }
+  .vote-btn.on {
+    background: var(--optic-yellow);
+    border-color: var(--optic-yellow);
+    color: var(--court-navy);
+  }
+  .vote-btn.on:hover { filter: brightness(0.95); }
+  .vote-btn:disabled { opacity: 0.5; cursor: wait; }
+
+  /* ---------- Footer total bar ---------- */
+  .totalbar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--court-navy-2);
+    border-top: 2px solid var(--card-line);
+    padding: 14px 20px;
+    display: flex;
+    justify-content: center;
+  }
+  .totalbar-inner {
+    width: 100%;
+    max-width: 720px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .totalbar-label {
+    font-size: 12.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .totalbar-value {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 22px;
+    color: var(--optic-yellow);
+  }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(9,14,26,0.85);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    z-index: 50;
+  }
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--card-line);
+    border-radius: 16px;
+    padding: 30px 26px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+  }
+  .modal .ball-icon {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--optic-yellow);
+    margin: 0 auto 16px;
+    position: relative;
+  }
+  .modal .ball-icon::before, .modal .ball-icon::after {
+    content: '';
+    position: absolute;
+    background: var(--court-navy);
+    border-radius: 2px;
+  }
+  .modal .ball-icon::before { width: 4px; height: 4px; top: 10px; left: 12px; }
+  .modal .ball-icon::after { width: 4px; height: 4px; bottom: 9px; right: 11px; }
+  .modal h2 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 20px;
+    text-transform: uppercase;
+    margin: 0 0 8px;
+  }
+  .modal p {
+    color: var(--muted);
+    font-size: 13.5px;
+    margin: 0 0 20px;
+    line-height: 1.5;
+  }
+  .modal input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--card-line);
+    background: var(--court-navy);
+    color: var(--line-white);
+    font-size: 15px;
+    font-family: inherit;
+    margin-bottom: 14px;
+  }
+  .modal input:focus {
+    outline: none;
+    border-color: var(--court-teal);
+  }
+  .modal button.go {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    background: var(--optic-yellow);
+    color: var(--court-navy);
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+  }
+  .modal button.go:disabled { opacity: 0.5; cursor: not-allowed; }
+  .modal .err {
+    color: var(--coral);
+    font-size: 12.5px;
+    margin: -8px 0 12px;
+    text-align: left;
+  }
+
+  .loading-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 420px) {
+    .card-bottom { flex-direction: column; align-items: stretch; }
+    .vote-btn { width: 100%; }
+  }
+</style>
+</head>
+<body style="margin:0;background-color:#10192E;">
+
+<div id="root" style="background-color:#10192E;min-height:100vh;"></div>
+
+<script>
+const ACTIVITIES = [
+  {
+    day: "Friday",
+    tag: "GAME 1",
+    items: [
+      { id: "fri-pickleball", time: "Evening", title: "Indoor Pickleball", venue: "Chicken & a Pickle", cost: 40 },
+      { id: "fri-karaoke", time: "Night", title: "Karaoke", venue: "Kamu Karaoke", cost: 70, note: "Includes drinks!" },
+    ]
+  },
+  {
+    day: "Saturday",
+    tag: "GAME 2",
+    items: [
+      { id: "sat-pickleball", time: "Afternoon", title: "Indoor Pickleball", venue: "The Courts LV", cost: 50 },
+      { id: "sat-dinner", time: "7:00 PM", title: "Group Dinner for Bryan", venue: "Venue TBD", cost: null },
+      { id: "sat-club", time: "11:00 PM · Night", title: "SClub", venue: "", cost: 80, note: "Bottle service included!" },
+    ]
+  }
+];
+
+const ADMIN_PASSCODE = 'pickleball2026';
+const ADMIN_KEY = 'bachelor-party-admin';
+
+const state = {
+  name: null,
+  votes: {},      // { name: [activityId, ...] }
+  loading: true,
+  saving: false,
+  syncStatus: 'ok',
+  isAdmin: false,
+};
+
+function el(tag, props = {}, children = []) {
+  const node = document.createElement(tag);
+  Object.entries(props).forEach(([k, v]) => {
+    if (k === 'class') node.className = v;
+    else if (k === 'html') node.innerHTML = v;
+    else if (k.startsWith('on')) node.addEventListener(k.slice(2), v);
+    else node.setAttribute(k, v);
+  });
+  (Array.isArray(children) ? children : [children]).forEach(c => {
+    if (c === null || c === undefined) return;
+    node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+  });
+  return node;
+}
+
+const JSONBIN_ID = '6a4c80c2f5f4af5e296a68a3';
+const JSONBIN_KEY = '$2a$10$OdmwPFfaevGFRVfpXXshJ.kLoObUn/EV/BMDTJXQOcvjlvxPFw616';
+const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_ID}`;
+const NAME_KEY = 'bachelor-party-name';
+
+function loadProfile() {
+  try {
+    return localStorage.getItem(NAME_KEY) || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveProfile(name) {
+  try {
+    localStorage.setItem(NAME_KEY, name);
+  } catch (e) { /* private browsing or storage blocked, ignore */ }
+}
+
+async function loadVotes() {
+  try {
+    const res = await fetch(`${JSONBIN_URL}/latest`, {
+      headers: { 'X-Master-Key': JSONBIN_KEY }
+    });
+    if (!res.ok) throw new Error('JSONBin read failed: ' + res.status);
+    const data = await res.json();
+    return (data.record && data.record.votes) || {};
+  } catch (e) {
+    console.error('Could not load votes', e);
+    return {};
+  }
+}
+
+async function saveVotes(votes, attempt = 1) {
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': JSONBIN_KEY,
+      },
+      body: JSON.stringify({ votes }),
+    });
+    if (!res.ok) throw new Error('JSONBin save failed: ' + res.status);
+    return true;
+  } catch (e) {
+    if (attempt < 3) {
+      await new Promise(r => setTimeout(r, 400 * attempt));
+      return saveVotes(votes, attempt + 1);
+    }
+    throw e;
+  }
+}
+
+function costLabel(cost) {
+  return cost ? `~$${cost}/each` : 'No cost yet';
+}
+
+function render() {
+  const root = document.getElementById('root');
+  root.innerHTML = '';
+
+  if (state.loading) {
+    root.appendChild(el('div', { class: 'loading-screen' }, 'Loading the bracket…'));
+    return;
+  }
+
+  const wrap = el('div', { class: 'wrap' });
+
+  // Header
+  wrap.appendChild(el('header', {}, [
+    el('div', { class: 'eyebrow' }, 'THE PICKLEBALL INVITATIONAL'),
+    el('h1', {}, ["BRYAN'S BACHELOR", el('br'), 'WEEKEND']),
+    el('p', { class: 'sub' }, 'Two days on the court, one groom to celebrate. Vote yourself into every match you\'re playing.'),
+  ]));
+
+  // Who am I
+  const statusNode = state.syncStatus === 'error'
+    ? el('span', { style: 'color:var(--coral);' }, ' · not synced, retrying…')
+    : state.syncStatus === 'saving'
+      ? el('span', { style: 'color:var(--muted);' }, ' · saving…')
+      : null;
+
+  const whoamiChildren = state.name
+    ? [
+        document.createTextNode('Signed in as '),
+        el('b', {}, state.name),
+        document.createTextNode(' · '),
+        el('button', { onclick: () => openNameModal(true) }, 'not you?'),
+        statusNode,
+      ]
+    : [
+        document.createTextNode("Browsing as a guest · "),
+        el('button', { onclick: () => openNameModal(false, null) }, 'set your name to vote'),
+      ];
+
+  wrap.appendChild(el('div', { class: 'whoami' }, whoamiChildren));
+
+  ACTIVITIES.forEach(section => {
+    wrap.appendChild(el('div', { class: 'game-label' }, [
+      el('span', { class: 'tag' }, section.tag),
+      el('span', { class: 'day-name' }, section.day),
+      el('span', { class: 'rule' }),
+    ]));
+
+    section.items.forEach(item => {
+      const voters = Object.keys(state.votes).filter(n => (state.votes[n] || []).includes(item.id));
+      const imIn = voters.includes(state.name);
+
+      const card = el('div', { class: 'card' + (imIn ? ' voted' : '') });
+
+      const top = el('div', { class: 'card-top' }, [
+        el('div', {}, [
+          el('div', { class: 'meta-row' }, item.time),
+          el('h3', {}, item.title),
+          item.venue ? el('p', { class: 'venue' }, item.venue) : null,
+          item.note ? el('div', { class: 'note' }, item.note) : null,
+        ]),
+        el('div', { class: 'cost-badge' }, costLabel(item.cost)),
+      ]);
+
+      const bottom = el('div', { class: 'card-bottom' });
+      const namesBlock = voters.length
+        ? el('div', { class: 'names' + (state.isAdmin ? ' admin-names' : '') },
+            state.isAdmin
+              ? voters.map((v, idx) => el('span', { class: 'name-pill' }, [
+                  el('button', { class: 'name-pill-btn', onclick: () => openEditVoterModal(v) }, v),
+                  el('button', { class: 'name-pill-x', title: `Remove ${v}`, onclick: () => adminRemoveVote(item.id, v) }, '×'),
+                  idx < voters.length - 1 ? document.createTextNode(' ') : null,
+                ]))
+              : [el('b', {}, voters.join(', '))]
+          )
+        : el('div', { class: 'names' }, 'Be the first one in');
+
+      const countBlock = el('div', {}, [
+        el('div', { class: 'in-count' }, [
+          el('b', {}, String(voters.length)),
+          voters.length === 1 ? 'PERSON IN' : 'PEOPLE IN',
+        ]),
+        namesBlock,
+      ]);
+
+      const btn = el('button', {
+        class: 'vote-btn' + (imIn ? ' on' : ''),
+        onclick: () => state.name ? toggleVote(item.id) : openNameModal(false, item.id),
+      }, imIn ? "You're in ✓" : "I'm in");
+
+      bottom.appendChild(countBlock);
+      bottom.appendChild(btn);
+
+      card.appendChild(top);
+      card.appendChild(bottom);
+      wrap.appendChild(card);
+    });
+  });
+
+  root.appendChild(wrap);
+
+  const footer = el('div', { class: 'admin-footer' }, [
+    state.isAdmin
+      ? el('button', { style: 'color:var(--optic-yellow);', onclick: exitAdmin }, 'Admin mode ✓ — tap to exit')
+      : el('button', { onclick: openAdminModal }, 'Admin'),
+  ]);
+  root.appendChild(footer);
+
+  if (!state.name) {
+    // no forced modal on load — people can browse freely and are only asked
+    // for a name the moment they try to vote.
+  }
+}
+
+let modalForceShow = false;
+function openNameModal(allowCancel, pendingActivityId) {
+  modalForceShow = true;
+  renderModal(allowCancel, pendingActivityId);
+}
+
+function renderModal(allowCancel, pendingActivityId) {
+  const existing = document.getElementById('name-modal-overlay');
+  if (existing) existing.remove();
+
+  const overlay = el('div', { class: 'modal-overlay', id: 'name-modal-overlay' });
+  const modal = el('div', { class: 'modal' });
+
+  const input = el('input', { type: 'text', placeholder: 'Your name', maxlength: '40', value: allowCancel && state.name ? state.name : '' });
+  const errBox = el('div', {});
+  const goBtn = el('button', { class: 'go' }, pendingActivityId ? "Save & vote I'm in" : 'Save & continue');
+
+  modal.appendChild(el('div', { class: 'ball-icon' }));
+  modal.appendChild(el('h2', {}, allowCancel ? 'Switch player' : "What's your name?"));
+  modal.appendChild(el('p', {}, allowCancel
+    ? "Update the name we'll remember on this device."
+    : "So people know who's showing up. We'll remember you here next time — no login needed."));
+  modal.appendChild(input);
+  modal.appendChild(errBox);
+  modal.appendChild(goBtn);
+
+  const cancel = el('button', { class: 'go', style: 'background:transparent;color:var(--muted);margin-top:10px;' }, 'Cancel');
+  cancel.addEventListener('click', () => { overlay.remove(); });
+  modal.appendChild(cancel);
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  setTimeout(() => input.focus(), 50);
+
+  const submit = async () => {
+    const val = input.value.trim();
+    if (!val) {
+      errBox.innerHTML = '';
+      errBox.appendChild(el('div', { class: 'err' }, 'Please enter a name.'));
+      return;
+    }
+    goBtn.disabled = true;
+    goBtn.textContent = 'Saving…';
+    state.name = val;
+    try {
+      await saveProfile(val);
+    } catch (e) { /* best effort */ }
+    overlay.remove();
+    if (pendingActivityId) {
+      await toggleVote(pendingActivityId);
+    } else {
+      render();
+    }
+  };
+
+  goBtn.addEventListener('click', submit);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+}
+
+function openAdminModal() {
+  const existing = document.getElementById('name-modal-overlay');
+  if (existing) existing.remove();
+
+  const overlay = el('div', { class: 'modal-overlay', id: 'name-modal-overlay' });
+  const modal = el('div', { class: 'modal' });
+
+  const input = el('input', { type: 'password', placeholder: 'Admin passcode' });
+  const errBox = el('div', {});
+  const goBtn = el('button', { class: 'go' }, 'Unlock');
+  const cancel = el('button', { class: 'go', style: 'background:transparent;color:var(--muted);margin-top:10px;' }, 'Cancel');
+  cancel.addEventListener('click', () => overlay.remove());
+
+  modal.appendChild(el('div', { class: 'ball-icon' }));
+  modal.appendChild(el('h2', {}, 'Admin access'));
+  modal.appendChild(el('p', {}, "Enter the admin passcode to edit or remove anyone's RSVPs."));
+  modal.appendChild(input);
+  modal.appendChild(errBox);
+  modal.appendChild(goBtn);
+  modal.appendChild(cancel);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  setTimeout(() => input.focus(), 50);
+
+  const submit = () => {
+    if (input.value === ADMIN_PASSCODE) {
+      state.isAdmin = true;
+      try { localStorage.setItem(ADMIN_KEY, '1'); } catch (e) {}
+      overlay.remove();
+      render();
+    } else {
+      errBox.innerHTML = '';
+      errBox.appendChild(el('div', { class: 'err' }, 'Wrong passcode.'));
+    }
+  };
+  goBtn.addEventListener('click', submit);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+}
+
+function exitAdmin() {
+  state.isAdmin = false;
+  try { localStorage.removeItem(ADMIN_KEY); } catch (e) {}
+  render();
+}
+
+async function adminRemoveVote(activityId, voterName) {
+  if (!confirm(`Remove ${voterName} from this activity?`)) return;
+  const mine = new Set(state.votes[voterName] || []);
+  mine.delete(activityId);
+  if (mine.size) state.votes[voterName] = Array.from(mine);
+  else delete state.votes[voterName];
+  render();
+  try {
+    await saveVotes(state.votes);
+  } catch (e) {
+    console.error('Could not save admin removal', e);
+  }
+}
+
+function openEditVoterModal(voterName) {
+  const existing = document.getElementById('name-modal-overlay');
+  if (existing) existing.remove();
+
+  const overlay = el('div', { class: 'modal-overlay', id: 'name-modal-overlay' });
+  const modal = el('div', { class: 'modal', style: 'text-align:left;max-width:400px;' });
+
+  modal.appendChild(el('h2', { style: 'text-align:center;' }, `Editing ${voterName}`));
+  modal.appendChild(el('p', { style: 'text-align:center;' }, "Toggle which activities they're in."));
+
+  const list = el('div', { style: 'display:flex;flex-direction:column;gap:8px;margin:16px 0;' });
+  ACTIVITIES.forEach(section => {
+    section.items.forEach(item => {
+      const isIn = (state.votes[voterName] || []).includes(item.id);
+      const row = el('button', {
+        style: `display:flex;justify-content:space-between;align-items:center;width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--card-line);background:${isIn ? 'rgba(228,255,61,0.12)' : 'transparent'};color:var(--line-white);font-family:inherit;font-size:13px;cursor:pointer;`,
+        onclick: async () => {
+          await adminToggleVoteFor(voterName, item.id);
+          openEditVoterModal(voterName);
+        },
+      }, [
+        document.createTextNode(`${section.day} · ${item.title}`),
+        el('span', { style: `color:${isIn ? 'var(--optic-yellow)' : 'var(--muted)'};font-weight:700;` }, isIn ? '✓ In' : 'Not in'),
+      ]);
+      list.appendChild(row);
+    });
+  });
+  modal.appendChild(list);
+
+  const removeAll = el('button', {
+    class: 'go',
+    style: 'background:var(--coral);color:#fff;margin-bottom:8px;',
+    onclick: async () => {
+      if (!confirm(`Remove ${voterName} from every activity?`)) return;
+      delete state.votes[voterName];
+      overlay.remove();
+      render();
+      try { await saveVotes(state.votes); } catch (e) {}
+    },
+  }, `Remove ${voterName} entirely`);
+
+  const done = el('button', { class: 'go', style: 'background:transparent;color:var(--muted);' }, 'Done');
+  done.addEventListener('click', () => overlay.remove());
+
+  modal.appendChild(removeAll);
+  modal.appendChild(done);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+}
+
+async function adminToggleVoteFor(voterName, activityId) {
+  const mine = new Set(state.votes[voterName] || []);
+  if (mine.has(activityId)) mine.delete(activityId);
+  else mine.add(activityId);
+  state.votes[voterName] = Array.from(mine);
+  render();
+  try {
+    await saveVotes(state.votes);
+  } catch (e) {
+    console.error('Could not save admin edit', e);
+  }
+}
+
+async function toggleVote(activityId) {
+  if (!state.name || state.saving) return;
+  state.saving = true;
+
+  const mine = new Set(state.votes[state.name] || []);
+  if (mine.has(activityId)) mine.delete(activityId);
+  else mine.add(activityId);
+  state.votes[state.name] = Array.from(mine);
+
+  state.syncStatus = 'saving';
+  render();
+
+  try {
+    await saveVotes(state.votes);
+    state.syncStatus = 'ok';
+  } catch (e) {
+    console.error('Could not save vote, will keep retrying', e);
+    state.syncStatus = 'error';
+  }
+  state.saving = false;
+  render();
+}
+
+async function pollVotes() {
+  try {
+    const fresh = await loadVotes();
+    if (state.syncStatus === 'error' && state.name) {
+      // Keep our own unsaved vote and retry pushing it, but adopt everyone else's latest.
+      fresh[state.name] = state.votes[state.name] || [];
+      state.votes = fresh;
+      render();
+      try {
+        await saveVotes(state.votes);
+        state.syncStatus = 'ok';
+      } catch (e) {
+        state.syncStatus = 'error';
+      }
+    } else {
+      state.votes = fresh;
+    }
+    if (!document.getElementById('name-modal-overlay')) render();
+  } catch (e) { /* network hiccup, try again next tick */ }
+}
+
+async function init() {
+  render();
+  const [name, votes] = await Promise.all([loadProfile(), loadVotes()]);
+  state.name = name;
+  state.votes = votes;
+  try { state.isAdmin = localStorage.getItem(ADMIN_KEY) === '1'; } catch (e) {}
+  state.loading = false;
+  render();
+  setInterval(pollVotes, 5000);
+}
+
+init();
+</script>
+
+</body>
+</html>
