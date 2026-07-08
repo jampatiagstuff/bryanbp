@@ -421,16 +421,14 @@
 <script>
 const ACTIVITIES = [
   {
-    day: "Friday",
-    tag: "GAME 1",
+    day: "Friday Activities",
     items: [
       { id: "fri-pickleball", time: "Evening", title: "Indoor Pickleball", venue: "Chicken & a Pickle", cost: 40 },
       { id: "fri-karaoke", time: "Night", title: "Karaoke", venue: "Kamu Karaoke", cost: 70, note: "Includes drinks!" },
     ]
   },
   {
-    day: "Saturday",
-    tag: "GAME 2",
+    day: "Saturday Activities",
     items: [
       { id: "sat-pickleball", time: "Afternoon", title: "Indoor Pickleball", venue: "The Courts LV", cost: 50 },
       { id: "sat-dinner", time: "7:00 PM", title: "Group Dinner for Bryan", venue: "Venue TBD", cost: null },
@@ -439,7 +437,7 @@ const ACTIVITIES = [
   }
 ];
 
-const ADMIN_PASSCODE = 'pickleball2026';
+const ADMIN_PASSCODE_HASH = '6bd628fff44e41ab8187a2ebc86c1a87b052bdc386daa3314cf18187f12f786d'; // sha-256, not the plaintext code
 const ADMIN_KEY = 'bachelor-party-admin';
 
 const state = {
@@ -566,7 +564,6 @@ function render() {
 
   ACTIVITIES.forEach(section => {
     wrap.appendChild(el('div', { class: 'game-label' }, [
-      el('span', { class: 'tag' }, section.tag),
       el('span', { class: 'day-name' }, section.day),
       el('span', { class: 'rule' }),
     ]));
@@ -720,8 +717,9 @@ function openAdminModal() {
   document.body.appendChild(overlay);
   setTimeout(() => input.focus(), 50);
 
-  const submit = () => {
-    if (input.value === ADMIN_PASSCODE) {
+  const submit = async () => {
+    const ok = await checkPasscode(input.value);
+    if (ok) {
       state.isAdmin = true;
       try { localStorage.setItem(ADMIN_KEY, '1'); } catch (e) {}
       overlay.remove();
@@ -733,6 +731,17 @@ function openAdminModal() {
   };
   goBtn.addEventListener('click', submit);
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+}
+
+async function checkPasscode(value) {
+  try {
+    const bytes = new TextEncoder().encode(value);
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    const hex = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+    return hex === ADMIN_PASSCODE_HASH;
+  } catch (e) {
+    return false; // e.g. crypto.subtle unavailable outside https
+  }
 }
 
 function exitAdmin() {
