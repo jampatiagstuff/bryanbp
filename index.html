@@ -465,7 +465,7 @@ function el(tag, props = {}, children = []) {
 }
 
 const JSONBIN_ID = '6a4c80c2f5f4af5e296a68a3';
-const JSONBIN_KEY = '$2a$10$OdmwPFfaevGFRVfpXXshJ.kLoObUn/EV/BMDTJXQOcvjlvxPFw616';
+const JSONBIN_KEY = '$2a$10$U.zl05Ox9shB0ErTJw4cUOmL.BtUp8w1uVADg9O6CABeOu6Bvv.t2'; // read+update Access Key, not the Master Key
 const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_ID}`;
 const NAME_KEY = 'bachelor-party-name';
 
@@ -486,7 +486,7 @@ function saveProfile(name) {
 async function loadVotes() {
   try {
     const res = await fetch(`${JSONBIN_URL}/latest`, {
-      headers: { 'X-Master-Key': JSONBIN_KEY }
+      headers: { 'X-Access-Key': JSONBIN_KEY }
     });
     if (!res.ok) throw new Error('JSONBin read failed: ' + res.status);
     const data = await res.json();
@@ -503,7 +503,7 @@ async function saveVotes(votes, attempt = 1) {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'X-Master-Key': JSONBIN_KEY,
+        'X-Access-Key': JSONBIN_KEY,
       },
       body: JSON.stringify({ votes }),
     });
