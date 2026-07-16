@@ -875,7 +875,24 @@ function openActivityModal(existing) {
     inputEl,
   ]);
 
-  const dayInput = el('input', { type: 'text', value: isEdit ? existing.day : '', placeholder: 'e.g. Friday Activities' });
+  const existingDays = Array.from(new Set(state.activities.map(a => a.day)));
+  const NEW_DAY_VALUE = '__new_day__';
+  const daySelect = el('select', {});
+  existingDays.forEach(d => daySelect.appendChild(el('option', { value: d }, d)));
+  daySelect.appendChild(el('option', { value: NEW_DAY_VALUE }, '+ Add a new day...'));
+  const startsAsNew = !isEdit && existingDays.length === 0;
+  daySelect.value = isEdit ? existing.day : (startsAsNew ? NEW_DAY_VALUE : existingDays[0]);
+
+  const newDayInput = el('input', {
+    type: 'text',
+    placeholder: 'e.g. Sunday Activities',
+    style: (daySelect.value === NEW_DAY_VALUE) ? 'margin-top:8px;' : 'margin-top:8px;display:none;',
+  });
+  daySelect.addEventListener('change', () => {
+    newDayInput.style.display = daySelect.value === NEW_DAY_VALUE ? 'block' : 'none';
+    if (daySelect.value === NEW_DAY_VALUE) newDayInput.focus();
+  });
+
   const timeSelect = el('select', {});
   TIME_OPTIONS.forEach(t => timeSelect.appendChild(el('option', { value: t }, t)));
   timeSelect.value = isEdit ? existing.time : TIME_OPTIONS[0];
@@ -884,7 +901,7 @@ function openActivityModal(existing) {
   const costInput = el('input', { type: 'number', min: '0', value: isEdit && existing.cost != null ? existing.cost : '', placeholder: 'Leave blank if no cost yet' });
   const noteInput = el('input', { type: 'text', value: isEdit ? (existing.note || '') : '', placeholder: 'Shows in yellow, e.g. Includes drinks!' });
 
-  modal.appendChild(field('Day', dayInput));
+  modal.appendChild(field('Day', el('div', {}, [daySelect, newDayInput])));
   modal.appendChild(field('Time', timeSelect));
   modal.appendChild(field('Activity name', titleInput));
   modal.appendChild(field('Location', venueInput));
@@ -896,7 +913,7 @@ function openActivityModal(existing) {
 
   const saveBtn = el('button', { class: 'go' }, isEdit ? 'Save changes' : 'Add activity');
   saveBtn.addEventListener('click', async () => {
-    const day = dayInput.value.trim();
+    const day = daySelect.value === NEW_DAY_VALUE ? newDayInput.value.trim() : daySelect.value;
     const title = titleInput.value.trim();
     if (!day || !title) {
       errBox.innerHTML = '';
@@ -954,7 +971,7 @@ function openActivityModal(existing) {
 
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
-  setTimeout(() => dayInput.focus(), 50);
+  setTimeout(() => titleInput.focus(), 50);
 }
 
 async function toggleVote(activityId) {
