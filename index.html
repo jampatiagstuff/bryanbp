@@ -264,6 +264,13 @@
   }
   .name-pill-x:hover { color: #fff; }
 
+  .admin-icon-btn {
+    background: none; border: 1px solid var(--card-line); color: var(--muted);
+    font-size: 11px; padding: 4px 9px; border-radius: 20px;
+    cursor: pointer; font-family: inherit; white-space: nowrap;
+  }
+  .admin-icon-btn:hover { color: var(--line-white); border-color: var(--court-teal); }
+
   .vote-btn {
     font-family: 'Archivo Black', sans-serif;
     font-size: 13px;
@@ -375,6 +382,17 @@
     outline: none;
     border-color: var(--court-teal);
   }
+  .modal select {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--card-line);
+    background: var(--court-navy);
+    color: var(--line-white);
+    font-size: 15px;
+    font-family: inherit;
+  }
+  .modal select:focus { outline: none; border-color: var(--court-teal); }
   .modal button.go {
     width: 100%;
     padding: 12px;
@@ -419,23 +437,25 @@
 <div id="root" style="background-color:#10192E;min-height:100vh;"></div>
 
 <script>
-const ACTIVITIES = [
-  {
-    day: "Friday Activities",
-    items: [
-      { id: "fri-pickleball", time: "Evening", title: "Indoor Pickleball", venue: "Chicken & a Pickle", cost: 40 },
-      { id: "fri-karaoke", time: "Night", title: "Karaoke", venue: "Kamu Karaoke", cost: 70, note: "Includes drinks!" },
-    ]
-  },
-  {
-    day: "Saturday Activities",
-    items: [
-      { id: "sat-pickleball", time: "Afternoon", title: "Indoor Pickleball", venue: "The Courts LV", cost: 50 },
-      { id: "sat-dinner", time: "7:00 PM", title: "Group Dinner for Bryan", venue: "Venue TBD", cost: null },
-      { id: "sat-club", time: "11:00 PM · Night", title: "SClub", venue: "", cost: 80, note: "Bottle service included!" },
-    ]
-  }
+const TIME_OPTIONS = ['Afternoon', 'Evening', 'Night', 'Late Night'];
+
+const DEFAULT_ACTIVITIES = [
+  { id: "fri-pickleball", day: "Friday Activities", time: "Evening", title: "Indoor Pickleball", venue: "Chicken & a Pickle", cost: 40 },
+  { id: "fri-karaoke", day: "Friday Activities", time: "Night", title: "Karaoke", venue: "Kamu Karaoke", cost: 70, note: "Includes drinks!" },
+  { id: "sat-pickleball", day: "Saturday Activities", time: "Afternoon", title: "Indoor Pickleball", venue: "The Courts LV", cost: 50 },
+  { id: "sat-dinner", day: "Saturday Activities", time: "Evening", title: "Group Dinner for Bryan", venue: "Venue TBD", cost: null },
+  { id: "sat-club", day: "Saturday Activities", time: "Late Night", title: "SClub", venue: "", cost: 80, note: "Bottle service included!" },
 ];
+
+function groupByDay(activities) {
+  const order = [];
+  const map = {};
+  activities.forEach(a => {
+    if (!map[a.day]) { map[a.day] = []; order.push(a.day); }
+    map[a.day].push(a);
+  });
+  return order.map(day => ({ day, items: map[day] }));
+}
 
 const ADMIN_PASSCODE_HASH = '6bd628fff44e41ab8187a2ebc86c1a87b052bdc386daa3314cf18187f12f786d'; // sha-256, not the plaintext code
 const ADMIN_KEY = 'bachelor-party-admin';
@@ -443,6 +463,7 @@ const ADMIN_KEY = 'bachelor-party-admin';
 const state = {
   name: null,
   votes: {},      // { name: [activityId, ...] }
+  activities: [],
   loading: true,
   saving: false,
   syncStatus: 'ok',
@@ -483,21 +504,25 @@ function saveProfile(name) {
   } catch (e) { /* private browsing or storage blocked, ignore */ }
 }
 
-async function loadVotes() {
+async function loadRecord() {
   try {
     const res = await fetch(`${JSONBIN_URL}/latest`, {
       headers: { 'X-Access-Key': JSONBIN_KEY }
     });
     if (!res.ok) throw new Error('JSONBin read failed: ' + res.status);
     const data = await res.json();
-    return (data.record && data.record.votes) || {};
+    const record = data.record || {};
+    return {
+      votes: record.votes || {},
+      activities: Array.isArray(record.activities) ? record.activities : null,
+    };
   } catch (e) {
-    console.error('Could not load votes', e);
-    return {};
+    console.error('Could not load data', e);
+    return { votes: {}, activities: null };
   }
 }
 
-async function saveVotes(votes, attempt = 1) {
+async function saveRecord(attempt = 1) {
   try {
     const res = await fetch(JSONBIN_URL, {
       method: 'PUT',
@@ -505,14 +530,14 @@ async function saveVotes(votes, attempt = 1) {
         'Content-Type': 'application/json',
         'X-Access-Key': JSONBIN_KEY,
       },
-      body: JSON.stringify({ votes }),
+      body: JSON.stringify({ votes: state.votes, activities: state.activities }),
     });
     if (!res.ok) throw new Error('JSONBin save failed: ' + res.status);
     return true;
   } catch (e) {
     if (attempt < 3) {
       await new Promise(r => setTimeout(r, 400 * attempt));
-      return saveVotes(votes, attempt + 1);
+      return saveRecord(attempt + 1);
     }
     throw e;
   }
@@ -537,7 +562,7 @@ function render() {
   wrap.appendChild(el('header', {}, [
     el('div', { class: 'eyebrow' }, 'THE BP-BP INVITATIONAL'),
     el('h1', {}, ["BRYAN'S BACHELOR", el('br'), 'WEEKEND']),
-    el('p', { class: 'sub' }, 'Two days on the court, one groom to celebrate. Vote yourself into every match you\'re playing.'),
+    el('p', { class: 'sub' }, 'Vegas lights, cold drinks, and a few dinks. Ante up and vote yourself into every game on the card.'),
   ]));
 
   // Who am I
@@ -562,7 +587,7 @@ function render() {
 
   wrap.appendChild(el('div', { class: 'whoami' }, whoamiChildren));
 
-  ACTIVITIES.forEach(section => {
+  groupByDay(state.activities).forEach(section => {
     wrap.appendChild(el('div', { class: 'game-label' }, [
       el('span', { class: 'day-name' }, section.day),
       el('span', { class: 'rule' }),
@@ -581,7 +606,10 @@ function render() {
           item.venue ? el('p', { class: 'venue' }, item.venue) : null,
           item.note ? el('div', { class: 'note' }, item.note) : null,
         ]),
-        el('div', { class: 'cost-badge' }, costLabel(item.cost)),
+        el('div', { style: 'display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0;' }, [
+          el('div', { class: 'cost-badge' }, costLabel(item.cost)),
+          state.isAdmin ? el('button', { class: 'admin-icon-btn', onclick: () => openActivityModal(item) }, '✎ Edit') : null,
+        ]),
       ]);
 
       const bottom = el('div', { class: 'card-bottom' });
@@ -618,6 +646,13 @@ function render() {
       wrap.appendChild(card);
     });
   });
+
+  if (state.isAdmin) {
+    wrap.appendChild(el('button', {
+      style: 'width:100%;padding:14px;border-radius:12px;border:2px dashed var(--card-line);background:transparent;color:var(--muted);font-family:"Archivo Black",sans-serif;font-size:13px;text-transform:uppercase;letter-spacing:0.04em;cursor:pointer;margin-top:8px;',
+      onclick: () => openActivityModal(null),
+    }, '+ Add Activity'));
+  }
 
   root.appendChild(wrap);
 
@@ -758,7 +793,7 @@ async function adminRemoveVote(activityId, voterName) {
   else delete state.votes[voterName];
   render();
   try {
-    await saveVotes(state.votes);
+    await saveRecord();
   } catch (e) {
     console.error('Could not save admin removal', e);
   }
@@ -775,21 +810,19 @@ function openEditVoterModal(voterName) {
   modal.appendChild(el('p', { style: 'text-align:center;' }, "Toggle which activities they're in."));
 
   const list = el('div', { style: 'display:flex;flex-direction:column;gap:8px;margin:16px 0;' });
-  ACTIVITIES.forEach(section => {
-    section.items.forEach(item => {
-      const isIn = (state.votes[voterName] || []).includes(item.id);
-      const row = el('button', {
-        style: `display:flex;justify-content:space-between;align-items:center;width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--card-line);background:${isIn ? 'rgba(228,255,61,0.12)' : 'transparent'};color:var(--line-white);font-family:inherit;font-size:13px;cursor:pointer;`,
-        onclick: async () => {
-          await adminToggleVoteFor(voterName, item.id);
-          openEditVoterModal(voterName);
-        },
-      }, [
-        document.createTextNode(`${section.day} · ${item.title}`),
-        el('span', { style: `color:${isIn ? 'var(--optic-yellow)' : 'var(--muted)'};font-weight:700;` }, isIn ? '✓ In' : 'Not in'),
-      ]);
-      list.appendChild(row);
-    });
+  state.activities.forEach(item => {
+    const isIn = (state.votes[voterName] || []).includes(item.id);
+    const row = el('button', {
+      style: `display:flex;justify-content:space-between;align-items:center;width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--card-line);background:${isIn ? 'rgba(228,255,61,0.12)' : 'transparent'};color:var(--line-white);font-family:inherit;font-size:13px;cursor:pointer;`,
+      onclick: async () => {
+        await adminToggleVoteFor(voterName, item.id);
+        openEditVoterModal(voterName);
+      },
+    }, [
+      document.createTextNode(`${item.day} · ${item.title}`),
+      el('span', { style: `color:${isIn ? 'var(--optic-yellow)' : 'var(--muted)'};font-weight:700;` }, isIn ? '✓ In' : 'Not in'),
+    ]);
+    list.appendChild(row);
   });
   modal.appendChild(list);
 
@@ -801,7 +834,7 @@ function openEditVoterModal(voterName) {
       delete state.votes[voterName];
       overlay.remove();
       render();
-      try { await saveVotes(state.votes); } catch (e) {}
+      try { await saveRecord(); } catch (e) {}
     },
   }, `Remove ${voterName} entirely`);
 
@@ -821,10 +854,107 @@ async function adminToggleVoteFor(voterName, activityId) {
   state.votes[voterName] = Array.from(mine);
   render();
   try {
-    await saveVotes(state.votes);
+    await saveRecord();
   } catch (e) {
     console.error('Could not save admin edit', e);
   }
+}
+
+function openActivityModal(existing) {
+  const existingOverlay = document.getElementById('name-modal-overlay');
+  if (existingOverlay) existingOverlay.remove();
+
+  const isEdit = !!existing;
+  const overlay = el('div', { class: 'modal-overlay', id: 'name-modal-overlay' });
+  const modal = el('div', { class: 'modal', style: 'text-align:left;max-width:400px;max-height:85vh;overflow-y:auto;' });
+
+  modal.appendChild(el('h2', { style: 'text-align:center;' }, isEdit ? 'Edit activity' : 'Add activity'));
+
+  const field = (labelText, inputEl) => el('div', { style: 'margin-bottom:12px;' }, [
+    el('div', { style: 'font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;' }, labelText),
+    inputEl,
+  ]);
+
+  const dayInput = el('input', { type: 'text', value: isEdit ? existing.day : '', placeholder: 'e.g. Friday Activities' });
+  const timeSelect = el('select', {});
+  TIME_OPTIONS.forEach(t => timeSelect.appendChild(el('option', { value: t }, t)));
+  timeSelect.value = isEdit ? existing.time : TIME_OPTIONS[0];
+  const titleInput = el('input', { type: 'text', value: isEdit ? existing.title : '', placeholder: 'e.g. Sunday Recovery Brunch' });
+  const venueInput = el('input', { type: 'text', value: isEdit ? (existing.venue || '') : '', placeholder: 'Optional' });
+  const costInput = el('input', { type: 'number', min: '0', value: isEdit && existing.cost != null ? existing.cost : '', placeholder: 'Leave blank if no cost yet' });
+  const noteInput = el('input', { type: 'text', value: isEdit ? (existing.note || '') : '', placeholder: 'Shows in yellow, e.g. Includes drinks!' });
+
+  modal.appendChild(field('Day', dayInput));
+  modal.appendChild(field('Time', timeSelect));
+  modal.appendChild(field('Activity name', titleInput));
+  modal.appendChild(field('Location', venueInput));
+  modal.appendChild(field('Estimated cost per person ($)', costInput));
+  modal.appendChild(field('Notes / includes', noteInput));
+
+  const errBox = el('div', {});
+  modal.appendChild(errBox);
+
+  const saveBtn = el('button', { class: 'go' }, isEdit ? 'Save changes' : 'Add activity');
+  saveBtn.addEventListener('click', async () => {
+    const day = dayInput.value.trim();
+    const title = titleInput.value.trim();
+    if (!day || !title) {
+      errBox.innerHTML = '';
+      errBox.appendChild(el('div', { class: 'err' }, 'Day and activity name are required.'));
+      return;
+    }
+    const costVal = costInput.value.trim();
+    const item = {
+      id: isEdit ? existing.id : `act-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      day,
+      time: timeSelect.value,
+      title,
+      venue: venueInput.value.trim(),
+      cost: costVal === '' ? null : Number(costVal),
+      note: noteInput.value.trim(),
+    };
+    if (isEdit) {
+      state.activities = state.activities.map(a => a.id === item.id ? item : a);
+    } else {
+      state.activities.push(item);
+    }
+    overlay.remove();
+    render();
+    try {
+      await saveRecord();
+    } catch (e) {
+      console.error('Could not save activity', e);
+    }
+  });
+  modal.appendChild(saveBtn);
+
+  if (isEdit) {
+    const deleteBtn = el('button', { class: 'go', style: 'background:var(--coral);color:#fff;margin-top:10px;' }, 'Delete this activity');
+    deleteBtn.addEventListener('click', async () => {
+      if (!confirm(`Delete "${existing.title}"? This also removes everyone's votes for it.`)) return;
+      state.activities = state.activities.filter(a => a.id !== existing.id);
+      Object.keys(state.votes).forEach(name => {
+        state.votes[name] = (state.votes[name] || []).filter(id => id !== existing.id);
+        if (!state.votes[name].length) delete state.votes[name];
+      });
+      overlay.remove();
+      render();
+      try {
+        await saveRecord();
+      } catch (e) {
+        console.error('Could not save deletion', e);
+      }
+    });
+    modal.appendChild(deleteBtn);
+  }
+
+  const cancel = el('button', { class: 'go', style: 'background:transparent;color:var(--muted);margin-top:10px;' }, 'Cancel');
+  cancel.addEventListener('click', () => overlay.remove());
+  modal.appendChild(cancel);
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  setTimeout(() => dayInput.focus(), 50);
 }
 
 async function toggleVote(activityId) {
@@ -840,7 +970,7 @@ async function toggleVote(activityId) {
   render();
 
   try {
-    await saveVotes(state.votes);
+    await saveRecord();
     state.syncStatus = 'ok';
   } catch (e) {
     console.error('Could not save vote, will keep retrying', e);
@@ -850,36 +980,44 @@ async function toggleVote(activityId) {
   render();
 }
 
-async function pollVotes() {
+async function pollData() {
+  const modalOpen = !!document.getElementById('name-modal-overlay');
   try {
-    const fresh = await loadVotes();
+    const fresh = await loadRecord();
     if (state.syncStatus === 'error' && state.name) {
       // Keep our own unsaved vote and retry pushing it, but adopt everyone else's latest.
-      fresh[state.name] = state.votes[state.name] || [];
-      state.votes = fresh;
+      fresh.votes[state.name] = state.votes[state.name] || [];
+      state.votes = fresh.votes;
+      if (!modalOpen && fresh.activities) state.activities = fresh.activities;
       render();
       try {
-        await saveVotes(state.votes);
+        await saveRecord();
         state.syncStatus = 'ok';
       } catch (e) {
         state.syncStatus = 'error';
       }
     } else {
-      state.votes = fresh;
+      state.votes = fresh.votes;
+      if (!modalOpen && fresh.activities) state.activities = fresh.activities;
     }
-    if (!document.getElementById('name-modal-overlay')) render();
+    if (!modalOpen) render();
   } catch (e) { /* network hiccup, try again next tick */ }
 }
 
 async function init() {
   render();
-  const [name, votes] = await Promise.all([loadProfile(), loadVotes()]);
+  const [name, record] = await Promise.all([Promise.resolve(loadProfile()), loadRecord()]);
   state.name = name;
-  state.votes = votes;
+  state.votes = record.votes;
+  state.activities = record.activities || DEFAULT_ACTIVITIES.map(a => ({ ...a }));
   try { state.isAdmin = localStorage.getItem(ADMIN_KEY) === '1'; } catch (e) {}
   state.loading = false;
   render();
-  setInterval(pollVotes, 5000);
+  if (!record.activities) {
+    // First run against this bin — seed it with the default lineup.
+    try { await saveRecord(); } catch (e) { console.error('Could not seed activities', e); }
+  }
+  setInterval(pollData, 5000);
 }
 
 init();
