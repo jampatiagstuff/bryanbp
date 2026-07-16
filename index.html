@@ -454,7 +454,14 @@ function groupByDay(activities) {
     if (!map[a.day]) { map[a.day] = []; order.push(a.day); }
     map[a.day].push(a);
   });
-  return order.map(day => ({ day, items: map[day] }));
+  const timeRank = t => {
+    const i = TIME_OPTIONS.indexOf(t);
+    return i === -1 ? TIME_OPTIONS.length : i; // unrecognized times sort last
+  };
+  return order.map(day => ({
+    day,
+    items: map[day].slice().sort((a, b) => timeRank(a.time) - timeRank(b.time)),
+  }));
 }
 
 const ADMIN_PASSCODE_HASH = '6bd628fff44e41ab8187a2ebc86c1a87b052bdc386daa3314cf18187f12f786d'; // sha-256, not the plaintext code
@@ -505,21 +512,16 @@ function saveProfile(name) {
 }
 
 async function loadRecord() {
-  try {
-    const res = await fetch(`${JSONBIN_URL}/latest`, {
-      headers: { 'X-Access-Key': JSONBIN_KEY }
-    });
-    if (!res.ok) throw new Error('JSONBin read failed: ' + res.status);
-    const data = await res.json();
-    const record = data.record || {};
-    return {
-      votes: record.votes || {},
-      activities: Array.isArray(record.activities) ? record.activities : null,
-    };
-  } catch (e) {
-    console.error('Could not load data', e);
-    return { votes: {}, activities: null };
-  }
+  const res = await fetch(`${JSONBIN_URL}/latest`, {
+    headers: { 'X-Access-Key': JSONBIN_KEY }
+  });
+  if (!res.ok) throw new Error('JSONBin read failed: ' + res.status);
+  const data = await res.json();
+  const record = data.record || {};
+  return {
+    votes: record.votes || {},
+    activities: Array.isArray(record.activities) ? record.activities : null,
+  };
 }
 
 async function saveRecord(attempt = 1) {
@@ -1023,17 +1025,36 @@ async function pollData() {
 
 async function init() {
   render();
-  const [name, record] = await Promise.all([Promise.resolve(loadProfile()), loadRecord()]);
+  const name = loadProfile();
   state.name = name;
-  state.votes = record.votes;
-  state.activities = record.activities || DEFAULT_ACTIVITIES.map(a => ({ ...a }));
+
+  let record = null;
+  try {
+    record = await loadRecord();
+  } catch (e) {
+    console.error('Initial load failed — showing local defaults without touching remote data', e);
+  }
+
+  if (record) {
+    // Read succeeded — trust it completely, including a genuinely empty activities list.
+    state.votes = record.votes;
+    state.activities = record.activities || DEFAULT_ACTIVITIES.map(a => ({ ...a }));
+    if (!record.activities) {
+      // Confirmed empty bin (first-ever use) — safe to seed it.
+      try { await saveRecord(); } catch (e) { console.error('Could not seed activities', e); }
+    }
+  } else {
+    // The read itself failed (network hiccup, etc). Show something reasonable locally,
+    // but never save here — doing so could permanently overwrite real remote data
+    // with these fallback defaults just because of a bad connection.
+    state.votes = {};
+    state.activities = DEFAULT_ACTIVITIES.map(a => ({ ...a }));
+    state.syncStatus = 'error';
+  }
+
   try { state.isAdmin = localStorage.getItem(ADMIN_KEY) === '1'; } catch (e) {}
   state.loading = false;
   render();
-  if (!record.activities) {
-    // First run against this bin — seed it with the default lineup.
-    try { await saveRecord(); } catch (e) { console.error('Could not seed activities', e); }
-  }
   setInterval(pollData, 5000);
 }
 
