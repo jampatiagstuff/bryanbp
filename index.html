@@ -524,6 +524,18 @@ async function loadRecord() {
   };
 }
 
+async function refreshFromRemote() {
+  // Pull the absolute latest votes/activities right before a write, so a
+  // concurrent change from someone else isn't silently clobbered by a stale save.
+  try {
+    const fresh = await loadRecord();
+    state.votes = fresh.votes;
+    if (fresh.activities) state.activities = fresh.activities;
+  } catch (e) {
+    // Read failed — fall back to whatever's already in memory rather than blocking the action.
+  }
+}
+
 async function saveRecord(attempt = 1) {
   try {
     const res = await fetch(JSONBIN_URL, {
@@ -789,6 +801,7 @@ function exitAdmin() {
 
 async function adminRemoveVote(activityId, voterName) {
   if (!confirm(`Remove ${voterName} from this activity?`)) return;
+  await refreshFromRemote();
   const mine = new Set(state.votes[voterName] || []);
   mine.delete(activityId);
   if (mine.size) state.votes[voterName] = Array.from(mine);
@@ -833,8 +846,9 @@ function openEditVoterModal(voterName) {
     style: 'background:var(--coral);color:#fff;margin-bottom:8px;',
     onclick: async () => {
       if (!confirm(`Remove ${voterName} from every activity?`)) return;
-      delete state.votes[voterName];
       overlay.remove();
+      await refreshFromRemote();
+      delete state.votes[voterName];
       render();
       try { await saveRecord(); } catch (e) {}
     },
@@ -850,6 +864,7 @@ function openEditVoterModal(voterName) {
 }
 
 async function adminToggleVoteFor(voterName, activityId) {
+  await refreshFromRemote();
   const mine = new Set(state.votes[voterName] || []);
   if (mine.has(activityId)) mine.delete(activityId);
   else mine.add(activityId);
@@ -940,6 +955,12 @@ function openActivityModal(existing) {
     overlay.remove();
     render();
     try {
+      await refreshFromRemote();
+      if (isEdit) {
+        state.activities = state.activities.map(a => a.id === item.id ? item : a);
+      } else if (!state.activities.some(a => a.id === item.id)) {
+        state.activities.push(item);
+      }
       await saveRecord();
     } catch (e) {
       console.error('Could not save activity', e);
@@ -951,12 +972,15 @@ function openActivityModal(existing) {
     const deleteBtn = el('button', { class: 'go', style: 'background:var(--coral);color:#fff;margin-top:10px;' }, 'Delete this activity');
     deleteBtn.addEventListener('click', async () => {
       if (!confirm(`Delete "${existing.title}"? This also removes everyone's votes for it.`)) return;
+      overlay.remove();
+      try {
+        await refreshFromRemote();
+      } catch (e) {}
       state.activities = state.activities.filter(a => a.id !== existing.id);
       Object.keys(state.votes).forEach(name => {
         state.votes[name] = (state.votes[name] || []).filter(id => id !== existing.id);
         if (!state.votes[name].length) delete state.votes[name];
       });
-      overlay.remove();
       render();
       try {
         await saveRecord();
@@ -980,13 +1004,21 @@ async function toggleVote(activityId) {
   if (!state.name || state.saving) return;
   state.saving = true;
 
-  const mine = new Set(state.votes[state.name] || []);
-  if (mine.has(activityId)) mine.delete(activityId);
-  else mine.add(activityId);
-  state.votes[state.name] = Array.from(mine);
-
+  // Reflect the tap instantly for responsiveness...
+  const wasIn = (state.votes[state.name] || []).includes(activityId);
+  const intendedAdd = !wasIn;
+  const optimistic = new Set(state.votes[state.name] || []);
+  if (intendedAdd) optimistic.add(activityId); else optimistic.delete(activityId);
+  state.votes[state.name] = Array.from(optimistic);
   state.syncStatus = 'saving';
   render();
+
+  // ...but before saving, re-fetch the freshest copy and re-apply just this one
+  // change on top of it, so someone else's simultaneous vote doesn't get lost.
+  await refreshFromRemote();
+  const merged = new Set(state.votes[state.name] || []);
+  if (intendedAdd) merged.add(activityId); else merged.delete(activityId);
+  state.votes[state.name] = Array.from(merged);
 
   try {
     await saveRecord();
